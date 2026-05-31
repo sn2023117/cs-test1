@@ -1,245 +1,77 @@
-let tasks=[];
+let tasks = [
+    { name: "영어 단어 암기", time: 15 },
+    { name: "전공 서적 읽기", time: 40 }
+];
 
-const facilities={
-
-집:[
-"GS25",
-"메가커피",
-"도서관"
-],
-
-학교:[
-"스터디카페",
-"열람실",
-"편의점"
-],
-
-알바:[
-"CU",
-"카페",
-"헬스장"
-]
-
-};
-
-function addTask(){
-
-const place=
-document.getElementById(
-"taskPlace"
-).value;
-
-const name=
-document.getElementById(
-"taskName"
-).value;
-
-const time=
-Number(
-document.getElementById(
-"taskTime"
-).value
-);
-
-if(!name||!time)return;
-
-tasks.push({
-place,
-name,
-time
-});
-
+// 초기 리스트 표시
 renderTasks();
 
+function addTask() {
+    const name = document.getElementById("taskName").value;
+    const time = Number(document.getElementById("taskTime").value);
+
+    if (!name || !time) {
+        alert("할 일과 소요 시간을 입력해주세요!");
+        return;
+    }
+
+    tasks.push({ name, time });
+    renderTasks();
+    
+    document.getElementById("taskName").value = "";
+    document.getElementById("taskTime").value = "";
 }
 
-function renderTasks(){
-
-let html="";
-
-tasks.forEach(task=>{
-
-html+=`
-<div class="task">
-${task.place}
-|
-${task.name}
-(${task.time}분)
-</div>
-`;
-
-});
-
-document.getElementById(
-"taskList"
-).innerHTML=html;
-
+function renderTasks() {
+    const listDiv = document.getElementById("taskList");
+    listDiv.innerHTML = tasks.map(t => `
+        <div class="task-item">
+            <span>✅ ${t.name}</span>
+            <span>${t.time}분</span>
+        </div>
+    `).join('');
 }
 
-function analyze(){
+function analyze() {
+    const free = Number(document.getElementById("freeTime").value);
+    const travel = Number(document.getElementById("travelTime").value);
+    const cost = Number(document.getElementById("cost").value);
 
-const free=
-Number(
-document.getElementById(
-"freeTime"
-).value
-);
+    if (!free || !travel) {
+        alert("시간 정보를 입력해주세요!");
+        return;
+    }
 
-const travel=
-Number(
-document.getElementById(
-"travelTime"
-).value
-);
+    const realTime = free - (travel * 2);
 
-const cost=
-Number(
-document.getElementById(
-"cost"
-).value
-);
+    if (realTime < 0) {
+        alert("이동 시간이 여유 시간보다 깁니다! 일정을 다시 확인하세요.");
+        return;
+    }
 
-const meal=
-Number(
-document.getElementById(
-"mealHour"
-).value
-);
+    // 결과 창 노출 및 데이터 반영
+    document.getElementById("initial-msg").style.display = "none";
+    document.getElementById("result-area").style.display = "block";
 
-const place=
-document.getElementById(
-"location"
-).value;
+    document.getElementById("res-time").innerText = realTime;
+    document.getElementById("res-cost").innerText = (cost * 2).toLocaleString();
 
-let realTime=
-free-(travel*2);
+    // 시간 내 가능한 활동 필터링
+    const possible = tasks.filter(t => t.time <= realTime);
+    const taskHtml = possible.length > 0 
+        ? possible.map(t => `• ${t.name} (${t.time}분)`).join('<br>')
+        : "추천할 활동이 없습니다. 충분한 휴식을 취하세요!";
+    
+    document.getElementById("res-tasks").innerHTML = `<div style="margin-top:10px;">${taskHtml}</div>`;
 
-let mealNeed="낮음";
-
-if(meal>=5){
-
-mealNeed="높음";
-
-realTime-=30;
-
-}
-else if(meal>=3){
-
-mealNeed="보통";
-
-realTime-=15;
-
-}
-
-const possible=
-tasks.filter(
-t=>t.time<=realTime
-);
-
-let recommend="";
-
-if(possible.length===0){
-
-recommend=
-`
-<div class="task">
-휴식을 추천합니다
-</div>
-`;
-
-}
-else{
-
-possible.forEach(task=>{
-
-recommend+=`
-<div class="task">
-
-<b>${task.name}</b>
-
-<br>
-
-${task.time}분
-
-</div>
-`;
-
-});
-
-}
-
-document.getElementById(
-"timeResult"
-).innerText=
-realTime+"분";
-
-document.getElementById(
-"costResult"
-).innerText=
-(cost*2).toLocaleString()+"원";
-
-document.getElementById(
-"mealResult"
-).innerText=
-mealNeed;
-
-let score=
-Math.max(
-0,
-Math.min(
-100,
-Math.round(
-(realTime/free)*100
-)
-)
-);
-
-document.getElementById(
-"scoreResult"
-).innerText=
-score+"%";
-
-document.getElementById(
-"recommendTasks"
-).innerHTML=
-recommend;
-
-document.getElementById(
-"facilityResult"
-).innerHTML=
-
-facilities[place]
-.map(
-f=>`<div class="facility">${f}</div>`
-)
-.join("");
-
-document.getElementById(
-"inputPage"
-).classList.add(
-"hidden"
-);
-
-document.getElementById(
-"resultPage"
-).classList.remove(
-"hidden"
-);
-
-}
-
-function goBack(){
-
-document.getElementById(
-"resultPage"
-).classList.add(
-"hidden"
-);
-
-document.getElementById(
-"inputPage"
-).classList.remove(
-"hidden"
-);
-
+    // 주변 시설 추천 로직
+    let tip = "";
+    if (realTime >= 60) {
+        tip = "📍 근처 <b>스터디카페</b>나 <b>도서관</b>으로 이동하는 것을 추천합니다.";
+    } else if (realTime >= 20) {
+        tip = "📍 가까운 <b>카페</b>에서 가벼운 작업을 추천합니다.";
+    } else {
+        tip = "📍 시간이 짧으니 <b>벤치</b>나 <b>휴게실</b> 이용을 권장합니다.";
+    }
+    document.getElementById("res-place").innerHTML = tip;
 }
