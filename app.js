@@ -487,3 +487,495 @@ function renderSchedule() {
 
     return `
       <div class="schedule-item" style="--pri-color:${priColor[t.pri]}">
+        <div class="schedule-step">${i + 1}</div>
+        <div class="schedule-item-body">
+          <div class="schedule-item-title">${locText[t.loc] || '🌍'} ${escapeHtml(t.title)}</div>
+          <div class="schedule-item-meta">
+            <span class="schedule-time">${timeStr}</span>
+            <span class="schedule-dur">${t.duration}분</span>
+            <span class="schedule-pri" style="color:${priColor[t.pri]}">${priLabel[t.pri]}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="schedule-summary">
+      <span class="schedule-mode-label">${modeLabel}</span>
+      <span>총 ${totalMin}분 / ${freeMin}분</span>
+      ${leftMin > 0 ? `<span class="schedule-left">여유 ${leftMin}분</span>` : ''}
+    </div>
+    <div class="schedule-timeline">${rows}</div>
+    <div class="schedule-footer">
+      ${leftMin >= 10 ? `💡 ${leftMin}분 여유가 있어요. 이동하거나 휴식을 취해보세요.` : '⚡ 공강 시간을 꽉 채웠어요!'}
+    </div>
+  `;
+
+  // 홈 배너 업데이트
+  updateHomeScheduleBanner(items, freeMin);
+}
+
+function updateHomeScheduleBanner(items, freeMin) {
+  const banner = document.getElementById('home-schedule-banner');
+  const list   = document.getElementById('home-schedule-list');
+  if (!banner || !list || items.length === 0) return;
+
+  banner.classList.remove('hidden');
+  list.innerHTML = items.slice(0, 3).map(t =>
+    `<div class="schedule-banner-item">
+      <span class="schedule-banner-dot" style="background:${{ urgent:'#ff6b6b', high:'#ffa94d', mid:'#74c0fc', low:'#a9e34b' }[t.pri]}"></span>
+      <span>${escapeHtml(t.title)}</span>
+      <span class="schedule-banner-dur">${t.duration}분</span>
+    </div>`
+  ).join('');
+}
+
+function switchScheduleTab(btn, mode) {
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.scheduleMode = mode;
+  renderSchedule();
+}
+
+// ══════════════════════════════════════
+//  ROUTING
+// ══════════════════════════════════════
+function goTo(page) {
+  document.getElementById('screen-onboarding')?.classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page)?.classList.add('active');
+
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === page);
+  });
+
+  state.currentPage = page;
+  if (page === 'home')   renderHome();
+  if (page === 'travel') renderTravelPage();
+  if (page === 'nearby') renderNearby();
+  if (page === 'tasks')  { renderTasks(); renderSchedule(); }
+}
+
+// ══════════════════════════════════════
+//  HOME
+// ══════════════════════════════════════
+function renderHome() {
+  const now = new Date();
+  const h = now.getHours();
+  document.getElementById('greeting-time').textContent =
+    now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })
+    + ' · '
+    + now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+  const msgs = [
+    [0,9,  '이른 아침이네요. 오늘 일정을 확인해요 ☀️'],
+    [9,12,  '오전 공강이에요! 집에 다녀올까요? 🏃'],
+    [12,14, '점심 시간! 밥은 먹었나요? 🍚'],
+    [14,18, '오후 공강, 어디서 시간을 보낼까요? ☕'],
+    [18,25, '저녁이에요. 오늘 할 일 마무리해요 🌙'],
+  ];
+  const msg = (msgs.find(([s,e]) => h >= s && h < e) || msgs[4])[2];
+  document.getElementById('greeting-msg').textContent = msg;
+
+  const urgent = state.tasks.filter(t => !t.done && (t.pri === 'urgent' || t.pri === 'high')).slice(0, 3);
+  const el = document.getElementById('home-task-preview');
+  el.innerHTML = urgent.length === 0
+    ? '<div class="empty-state" style="padding:16px"><div class="empty-icon">✅</div>긴급 할 일이 없어요!</div>'
+    : urgent.map(t => `
+        <div class="task-preview-item">
+          <div class="task-preview-pri pri-${t.pri}"></div>
+          <div class="task-preview-text">${escapeHtml(t.title)}</div>
+          <div class="task-preview-loc">${t.duration ? t.duration + '분' : ''} ${locLabel(t.loc)}</div>
+        </div>`).join('');
+
+  if (state.lastTravel) updateHomeTravelBanner(state.lastTravel);
+
+  const freeMin = getEffectiveFreeMinutes(0);
+  if (freeMin > 0) {
+    const { items } = buildSchedule(freeMin, state.scheduleMode);
+    updateHomeScheduleBanner(items, freeMin);
+  }
+}
+
+function locLabel(loc) {
+  return { home: '🏠 집', school: '🏫 학교', anywhere: '🌍 어디서나' }[loc] || loc;
+}
+
+// ══════════════════════════════════════
+//  MEAL
+// ══════════════════════════════════════
+function toggleMeal() {
+  state.mealEaten = !state.mealEaten;
+  document.getElementById('meal-icon').textContent  = state.mealEaten ? '✅' : '🍚';
+  document.getElementById('meal-label').textContent = state.mealEaten ? '식사 완료' : '식사 전';
+  document.getElementById('meal-status').classList.toggle('ate', state.mealEaten);
+  renderTasks();
+  renderSchedule();
+}
+
+// ══════════════════════════════════════
+//  TRAVEL
+// ══════════════════════════════════════
+function selectTransport(btn) {
+  document.querySelectorAll('.pill[data-transport]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.transport = btn.dataset.transport;
+  calcTravel({ silent: true });
+}
+
+function renderTravelPage() {
+  hydrateFreeMinuteInputs();
+  renderPlaceOptions();
+  renderRouteLibrary();
+  updateRouteNote();
+  renderResultPreviews();
+  if (document.getElementById('free-minutes').value) calcTravel({ silent: true });
+}
+
+function renderPlaceOptions() {
+  const places = [...new Set(allRoutes().flatMap(r => [r.from, r.to]))].sort((a,b) => a.localeCompare(b,'ko'));
+  const el = document.getElementById('place-options');
+  if (el) el.innerHTML = places.map(p => `<option value="${escapeHtml(p)}"></option>`).join('');
+}
+
+function renderRouteLibrary() {
+  const el = document.getElementById('saved-route-list');
+  if (!el) return;
+  const query = normalizePlace(document.getElementById('route-search')?.value || '');
+  const routes = allRoutes().filter(r => {
+    if (!query) return true;
+    return [r.from, r.to, ...(r.tags || [])].some(v => normalizePlace(v).includes(query));
+  });
+  if (routes.length === 0) {
+    el.innerHTML = '<div class="route-empty">검색 결과가 없어요. 출발지/도착지를 입력한 뒤 저장해보세요.</div>';
+    return;
+  }
+  el.innerHTML = routes.map(r => {
+    const isCustom = r.id.startsWith('custom-');
+    const sub = r.transports.subway || Object.values(r.transports)[0];
+    return `<div class="route-chip" onclick="applyRoute('${r.id}')">
+      <div>
+        <strong>${escapeHtml(r.from)} → ${escapeHtml(r.to)}</strong>
+        <span>${sub.oneWayMin}분 · ${formatWon(sub.roundCost)} · ${sub.distanceKm}km</span>
+      </div>
+      <em>${isCustom ? '저장됨' : '더미'}</em>
+    </div>`;
+  }).join('');
+}
+
+function applyRoute(routeId) {
+  const route = allRoutes().find(r => r.id === routeId);
+  if (!route) return;
+  document.getElementById('from-place').value = route.from;
+  document.getElementById('to-place').value   = route.to;
+  updateRouteNote(route);
+  calcTravel({ silent: true });
+}
+
+function saveCurrentRoute() {
+  const from = document.getElementById('from-place').value.trim();
+  const to   = document.getElementById('to-place').value.trim();
+  if (!from || !to) { alert('출발지와 도착지를 모두 입력해주세요.'); return; }
+  if (findRoute(from, to)?.id?.startsWith('custom-')) { alert('이미 저장된 경로예요.'); return; }
+  const route = makeFallbackRoute(from, to);
+  route.id = 'custom-' + Date.now();
+  route.tags = ['내 저장 경로', from, to];
+  route.note = '사용자가 저장한 더미 경로입니다.';
+  state.customRoutes.unshift(route);
+  writeStorage(STORAGE_KEYS.customRoutes, state.customRoutes);
+  renderPlaceOptions();
+  renderRouteLibrary();
+  updateRouteNote(route);
+  calcTravel({ silent: true });
+}
+
+function swapPlaces() {
+  const f = document.getElementById('from-place'), t = document.getElementById('to-place');
+  const tmp = f.value; f.value = t.value; t.value = tmp;
+  updateRouteNote();
+  calcTravel({ silent: true });
+}
+
+function updateRouteNote(route) {
+  const el = document.getElementById('route-data-note');
+  if (!el) return;
+  const r = route || getSelectedRoute();
+  if (!r) return;
+  const isReg = Boolean(findRoute(r.from, r.to));
+  el.textContent = isReg ? r.note : '등록된 더미 경로가 없어 앱 내부 추정값으로 계산합니다. 저장하면 검색 목록에 추가돼요.';
+}
+
+function calcTravel(options = {}) {
+  const freeMin = getEffectiveFreeMinutes(0) || parseInt(document.getElementById('free-minutes')?.value, 10);
+  const stayMin = parseInt(document.getElementById('home-stay').value, 10) || 30;
+  const route   = getSelectedRoute();
+
+  if (!route) { if (!options.silent) alert('출발지와 도착지를 입력해주세요.'); return; }
+  if (!freeMin || freeMin < 10) { updateRouteNote(route); if (!options.silent) alert('공강 시간을 입력해주세요 (최소 10분)'); return; }
+
+  saveFreeMinutes(freeMin);
+  hydrateFreeMinuteInputs();
+
+  const td = route.transports[state.transport] || route.transports.subway || Object.values(route.transports)[0];
+  const oneWayMin = td.oneWayMin;
+  const roundMin  = oneWayMin * 2;
+  const marginMin = freeMin - (roundMin + stayMin);
+  const roundCost = td.roundCost;
+  const canGo = marginMin >= 0;
+
+  const resultCard = document.getElementById('travel-result');
+  resultCard.classList.remove('hidden','go','stay');
+  resultCard.classList.add(canGo ? 'go' : 'stay');
+
+  document.getElementById('travel-verdict').textContent = canGo
+    ? '✅ 다녀올 수 있어요! (+' + marginMin + '분 여유)'
+    : '❌ 시간이 부족해요 (' + Math.abs(marginMin) + '분 모자람)';
+
+  document.getElementById('route-summary').textContent = route.from + ' → ' + route.to + ' · ' + transportLabels[state.transport] + ' · ' + td.detail;
+  document.getElementById('r-one-way').textContent    = oneWayMin + '분';
+  document.getElementById('r-round-trip').textContent = roundMin + '분';
+  document.getElementById('r-cost').textContent       = formatWon(roundCost);
+  document.getElementById('r-margin').textContent     = marginMin >= 0 ? marginMin + '분' : '없음';
+  document.getElementById('cost-total-display').textContent = formatWon(roundCost);
+  document.getElementById('cost-row-1-label').textContent = transportLabels[state.transport] + ' 편도 시간';
+  document.getElementById('cost-row-1-val').textContent   = oneWayMin + '분';
+  document.getElementById('cost-row-2-label').textContent = '더미 거리 ' + td.distanceKm + 'km';
+  document.getElementById('cost-row-2-val').textContent   = formatWon(roundCost);
+  document.getElementById('cost-row-3-val').textContent   = findRoute(route.from, route.to) ? '등록 더미' : '추정 더미';
+
+  const suggestions = ['빨래 돌리기','짧은 낮잠','간단한 식사','필요한 물건 챙기기'];
+  let sug = '';
+  if (canGo && marginMin >= 30) sug = '🎉 ' + marginMin + '분 여유가 있어요! 집에서 ' + suggestions[Math.floor(Math.random()*4)] + '도 할 수 있어요.';
+  else if (canGo) sug = '⚡ 빠듯하게 다녀올 수 있어요. 지체 없이 바로 출발하세요!';
+  else if (marginMin > -15) sug = '😅 조금 부족해요. 집에 있는 시간을 ' + Math.max(0, stayMin - Math.abs(marginMin)) + '분으로 줄이면 가능해요!';
+  else sug = '🏫 이번 공강엔 학교 근처에 있는 게 나을 것 같아요. 근처 카페나 스터디카페를 찾아볼까요?';
+  document.getElementById('travel-suggestion').textContent = sug;
+
+  const result = { canGo, route, roundMin, roundCost, marginMin };
+  state.lastTravel = result;
+  writeStorage(STORAGE_KEYS.lastRoute, result);
+  updateHomeTravelBanner(result);
+  updateRouteNote(route);
+  renderResultPreviews();
+
+  if (!options.silent) resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function updateHomeTravelBanner(result) {
+  const banner = document.getElementById('home-result-banner');
+  if (!banner || !result) return;
+  banner.classList.remove('hidden');
+  document.getElementById('result-verdict-text').textContent = result.canGo ? '✅ 집에 다녀올 수 있어요!' : '❌ 이번엔 학교 근처에 있는 게 나아요';
+  document.getElementById('result-detail-text').textContent  = result.route.from + ' → ' + result.route.to + ' · 왕복 ' + result.roundMin + '분 · 교통비 ' + formatWon(result.roundCost);
+}
+
+function renderResultPreviews() {
+  const taskEl   = document.getElementById('result-task-preview');
+  const nearbyEl = document.getElementById('result-nearby-preview');
+  if (!taskEl || !nearbyEl) return;
+
+  const preview = [...state.tasks].filter(t => !t.done).sort((a,b) => (priOrder[a.pri]??9) - (priOrder[b.pri]??9)).slice(0,3);
+  taskEl.innerHTML = preview.length
+    ? preview.map(t => `<div class="preview-item"><span class="preview-dot pri-${t.pri}"></span><span>${escapeHtml(t.title)}</span>${t.duration ? '<span class="schedule-dur">' + t.duration + '분</span>' : ''}</div>`).join('')
+    : '<div class="preview-empty">할 일이 없어요</div>';
+
+  const freeMin = getEffectiveFreeMinutes(60);
+  const places = getNearbyPlacesForOrigin(getOriginName())
+    .filter(p => p.cat === 'cafe')
+    .sort((a,b) => { const aOk = freeMin >= a.minNeeded ? 1 : 0, bOk = freeMin >= b.minNeeded ? 1 : 0; return bOk - aOk || parseFloat(b.rating) - parseFloat(a.rating); })
+    .slice(0,2);
+
+  nearbyEl.innerHTML = places.map(p => `<div class="preview-place"><strong>${p.emoji} ${escapeHtml(p.name)}</strong><span>${p.dist} · ${p.minNeeded}분 필요 · ⭐ ${p.rating}</span></div>`).join('');
+}
+
+// ══════════════════════════════════════
+//  NEARBY
+// ══════════════════════════════════════
+function filterNearby(btn, cat) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.nearbyFilter = cat;
+  renderNearby();
+}
+
+function renderNearby() {
+  hydrateFreeMinuteInputs();
+  const freeMin = getEffectiveFreeMinutes(60);
+  const cat = state.nearbyFilter;
+  const originName = getOriginName();
+
+  const lbl = document.getElementById('nearby-origin-label');
+  if (lbl) lbl.textContent = '⏱️ ' + originName + ' 주변 · 남은 공강';
+
+  let places = [...getNearbyPlacesForOrigin(originName)];
+  if (cat !== 'all') places = places.filter(p => p.cat === cat);
+
+  places.sort((a, b) => {
+    const aOk = freeMin >= a.minNeeded ? 1 : 0, bOk = freeMin >= b.minNeeded ? 1 : 0;
+    return bOk - aOk || parseFloat(b.rating) - parseFloat(a.rating);
+  });
+
+  const el = document.getElementById('nearby-list');
+  if (!el) return;
+
+  el.innerHTML = places.length === 0
+    ? '<div class="empty-state"><div class="empty-icon">🔍</div>해당 카테고리에 장소가 없어요</div>'
+    : places.map(p => {
+        const ok  = freeMin >= p.minNeeded;
+        const tag = ok
+          ? '<span class="nearby-tag ok">✅ 가능</span>'
+          : '<span class="nearby-tag tight">⏱️ ' + p.minNeeded + '분 필요</span>';
+        return `<div class="nearby-card ${ok ? '' : 'not-enough'}">
+          <div class="nearby-emoji">${p.emoji}</div>
+          <div class="nearby-info">
+            <div class="nearby-name">${escapeHtml(p.name)}</div>
+            <div class="nearby-meta"><span>${p.dist}</span><span>⭐ ${p.rating}</span><span>${escapeHtml(p.desc)}</span></div>
+          </div>${tag}</div>`;
+      }).join('');
+}
+
+// ══════════════════════════════════════
+//  TASKS
+// ══════════════════════════════════════
+function selectLoc(btn) {
+  document.querySelectorAll('.pill[data-loc]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.taskLoc = btn.dataset.loc;
+}
+function selectPri(btn) {
+  document.querySelectorAll('.priority-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.taskPri = btn.dataset.pri;
+}
+function selectMealReq(btn) {
+  document.querySelectorAll('.pill[data-meal]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.taskMealReq = btn.dataset.meal;
+}
+
+function addTask() {
+  const title = document.getElementById('task-title').value.trim();
+  if (!title) { alert('할 일을 입력해주세요!'); return; }
+
+  const duration = parseInt(document.getElementById('task-duration').value, 10) || 30;
+  const task = {
+    id: Date.now(),
+    title,
+    loc: state.taskLoc,
+    pri: state.taskPri,
+    due: document.getElementById('task-due').value,
+    meal: state.taskMealReq,
+    done: false,
+    duration,
+  };
+
+  state.tasks.unshift(task);
+  saveTasks();
+  renderTasks();
+  renderSchedule();
+  renderHome();
+  renderResultPreviews();
+
+  document.getElementById('task-title').value = '';
+  document.getElementById('task-due').value = '';
+  document.getElementById('task-duration').value = '30';
+}
+
+function toggleTask(id) {
+  const t = state.tasks.find(t => t.id === id);
+  if (t) { t.done = !t.done; saveTasks(); renderTasks(); renderSchedule(); renderHome(); renderResultPreviews(); }
+}
+
+function deleteTask(id) {
+  state.tasks = state.tasks.filter(t => t.id !== id);
+  saveTasks(); renderTasks(); renderSchedule(); renderHome(); renderResultPreviews();
+}
+
+function switchLocTab(btn, loc) {
+  document.querySelectorAll('.loc-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.activeLocTab = loc;
+  renderTasks();
+}
+
+function renderTasks() {
+  const filter = state.activeLocTab;
+  const today  = new Date().toISOString().split('T')[0];
+
+  let tasks = [...state.tasks];
+  if (filter !== 'all') tasks = tasks.filter(t => t.loc === filter);
+  tasks = tasks.filter(t => {
+    if (t.meal === 'any') return true;
+    if (t.meal === 'after'  && !state.mealEaten) return false;
+    if (t.meal === 'before' &&  state.mealEaten) return false;
+    return true;
+  });
+  tasks.sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    return (priOrder[a.pri] ?? 9) - (priOrder[b.pri] ?? 9);
+  });
+
+  const el = document.getElementById('task-list');
+  if (!el) return;
+
+  if (tasks.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div>할 일이 없어요!</div>';
+    return;
+  }
+
+  const locBadge = { home: 'badge-home', school: 'badge-school', anywhere: 'badge-anywhere' };
+  const locText  = { home: '🏠 집', school: '🏫 학교', anywhere: '🌍 어디서나' };
+  const priText  = { urgent: '긴급', high: '높음', mid: '보통', low: '낮음' };
+  const mealText = { after: '🍽️ 식사 후', before: '🥢 식사 전' };
+
+  el.innerHTML = tasks.map(t => {
+    const isOverdue = t.due && t.due < today && !t.done;
+    const dueStr = t.due
+      ? `<span class="task-due ${isOverdue ? 'overdue' : ''}">📅 ${isOverdue ? '기한 초과 · ' : ''}${t.due}</span>`
+      : '';
+    const mealBadge = t.meal !== 'any' ? `<span class="task-badge badge-meal-${t.meal}">${mealText[t.meal]}</span>` : '';
+    const durBadge  = t.duration ? `<span class="task-badge badge-dur">⏳ ${t.duration}분</span>` : '';
+
+    return `<div class="task-item ${t.done ? 'done' : ''}">
+        <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggleTask(${t.id})">${t.done ? '✓' : ''}</div>
+        <div class="task-body">
+          <div class="task-title-text">${escapeHtml(t.title)}</div>
+          <div class="task-meta">
+            <span class="task-badge ${locBadge[t.loc]}">${locText[t.loc]}</span>
+            <span class="task-badge badge-pri-${t.pri}">${priText[t.pri]}</span>
+            ${durBadge}${mealBadge}${dueStr}
+          </div>
+        </div>
+        <button class="task-delete" onclick="deleteTask(${t.id})">🗑️</button>
+      </div>`;
+  }).join('');
+}
+
+function saveTasks() { writeStorage(STORAGE_KEYS.tasks, state.tasks); }
+
+// ══════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function () {
+  hydrateFreeMinuteInputs();
+  renderHome();
+  renderNearby();
+  renderTasks();
+  renderSchedule();
+  renderTravelPage();
+  updateTimerUI();
+  updateProgressBar();
+  updateTimerStatusBar();
+
+  ['from-place','to-place','home-stay'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', () => {
+      updateRouteNote();
+      renderNearby();
+      renderResultPreviews();
+      calcTravel({ silent: true });
+    });
+  });
+});
