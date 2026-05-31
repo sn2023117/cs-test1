@@ -45,9 +45,12 @@ body {
   min-height: 100vh;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 0 80px rgba(120,120,180,0.18);
+  /* 제거: box-shadow (경계선 역할) */
 }
-.screen.active { display: flex; }
+
+.screen.active {
+  display: flex;
+}
 
 /* ── ONBOARDING ── */
 #screen-onboarding {
@@ -107,16 +110,6 @@ body {
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-mid);
-}
-
-.meal-badge {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background: var(--yellow-soft);
-  padding: 5px 10px;
-  border-radius: 30px;
-  font-size: 0.75rem;
 }
 
 .page-container {
@@ -185,16 +178,8 @@ body {
   box-shadow: var(--shadow);
 }
 
-/* ── ROUTE / CARDS ── */
-.route-chip {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: rgba(255,255,255,0.62);
-}
-
-/* ── NEARBY ── */
+/* ── ROUTE / NEARBY ── */
+.route-chip,
 .nearby-card {
   background: var(--card-bg);
   backdrop-filter: var(--card-blur);
@@ -205,7 +190,7 @@ body {
   box-shadow: var(--shadow);
 }
 
-/* ── SCHEDULE ITEM (border-left 제거됨) ── */
+/* ── SCHEDULE ITEM ── */
 .schedule-item {
   display: flex;
   gap: 10px;
@@ -214,6 +199,32 @@ body {
   border-radius: var(--radius-sm);
 }
 
-/* ── UTILS ── */
-.hidden { display: none !important; }
-.empty-state { text-align: center; padding: 40px 20px; color: var(--text-light); }
+/* ── RESPONSIVE ── */
+@media (max-width: 360px) {
+  .hero-title { font-size: 2.45rem; }
+  .route-actions { grid-template-columns: 1fr; }
+  .result-preview-grid { grid-template-columns: 1fr; }
+  .top-bar-inner { padding: 8px 12px; }
+}
+
+/* 핵심 수정: 바깥 여백 제거 (프레임 효과 제거) */
+@media (min-width: 481px) {
+  body {
+    padding: 0;
+  }
+
+  .screen {
+    border-radius: 0;
+    min-height: 100vh;
+    max-height: none;
+    overflow: auto;
+  }
+
+  .bottom-nav {
+    border-radius: 0;
+  }
+
+  .top-bar {
+    border-radius: 0;
+  }
+}
