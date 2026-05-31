@@ -44,7 +44,7 @@ body {
 .screen {
   display: none;
   width: 100%;
-  max-width: 100%;
+  max-width: 70%;
   min-height: 100vh;
   flex-direction: column;
   position: relative;
