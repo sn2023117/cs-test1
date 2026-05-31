@@ -10,7 +10,6 @@
 </head>
 <body>
 
-  <!-- ══════════════ ONBOARDING SCREEN ══════════════ -->
   <div id="screen-onboarding" class="screen active">
     <div class="onboarding-bg">
       <div class="cloud cloud-1">☁️</div>
@@ -19,16 +18,14 @@
     </div>
     <div class="onboarding-content">
       <div class="logo-badge">공강 네비</div>
-      <h1 class="hero-title">지금 집에<br/>다녀올 수 있을까?</h1>
+      <h1 class="hero-title">지금 집에<br/><span class="hero-nowrap">다녀올 수 있을까?</span></h1>
       <p class="hero-sub">공강 시간, 현명하게 쓰는 법<br/>이동 시간 · 교통비 · 할 일까지 한 번에</p>
       <button class="btn-start" onclick="goTo('home')">시작하기 →</button>
     </div>
     <div class="wave-bottom"></div>
   </div>
 
-  <!-- ══════════════ MAIN APP SHELL ══════════════ -->
   <div id="screen-app" class="screen">
-
     <header class="top-bar">
       <div class="top-bar-inner">
         <span class="app-logo">🌤️ 공강 네비</span>
@@ -40,7 +37,6 @@
     </header>
 
     <main class="page-container">
-
       <div id="page-home" class="page active">
         <div class="greeting-card">
           <p class="greeting-time" id="greeting-time"></p>
@@ -119,6 +115,7 @@
         <div id="travel-result" class="result-card hidden">
           <div class="result-header" id="travel-verdict"></div>
           <div class="route-summary" id="route-summary"></div>
+
           <div class="result-grid">
             <div class="result-item">
               <div class="result-item-icon">🕐</div>
@@ -141,7 +138,19 @@
               <div class="result-item-val" id="r-margin"></div>
             </div>
           </div>
+
           <div class="suggestion-box" id="travel-suggestion"></div>
+
+          <div class="result-preview-grid">
+            <div class="preview-panel">
+              <div class="preview-title">할 일 미리보기</div>
+              <div id="result-task-preview" class="preview-list"></div>
+            </div>
+            <div class="preview-panel">
+              <div class="preview-title">출발지 주변 추천</div>
+              <div id="result-nearby-preview" class="preview-list"></div>
+            </div>
+          </div>
         </div>
 
         <div class="card" style="margin-top:16px;">
@@ -165,7 +174,7 @@
       <div id="page-nearby" class="page">
         <div class="page-header">
           <h2>📍 주변 편의시설</h2>
-          <p class="page-desc">공강 시간을 알차게 보낼 장소를 찾아요</p>
+          <p class="page-desc">출발지 주변에서 공강 시간을 보낼 장소를 추천해요</p>
         </div>
 
         <div class="filter-row">
@@ -177,8 +186,8 @@
         </div>
 
         <div class="free-time-bar">
-          <span>⏱️ 남은 공강</span>
-          <input type="number" id="nearby-free-min" class="inline-input" value="60" min="10" max="300" onchange="renderNearby()" />
+          <span id="nearby-origin-label">⏱️ 출발지 주변 · 남은 공강</span>
+          <input type="number" id="nearby-free-min" class="inline-input" value="60" min="10" max="300" oninput="syncFreeMinutes('nearby')" />
           <span>분</span>
         </div>
 
@@ -233,7 +242,6 @@
 
         <div id="task-list" class="task-list"></div>
       </div>
-
     </main>
 
     <nav class="bottom-nav">
@@ -254,7 +262,6 @@
         <span class="nav-label">할 일</span>
       </button>
     </nav>
-
   </div>
 
   <script src="app.js"></script>
