@@ -1,71 +1,196 @@
-
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>집갈까?</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>시간 활용 도우미</title>
 
 <style>
-body {
+body{
     font-family: Arial, sans-serif;
-    max-width: 600px;
-    margin: 50px auto;
-    text-align: center;
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+    background-color: #f4f4f4;
 }
 
-input {
-    width: 200px;
-    padding: 8px;
-    margin: 10px;
+h1{
+    text-align:center;
 }
 
-button {
-    padding: 10px 20px;
-    cursor: pointer;
+.card{
+    background:white;
+    padding:20px;
+    margin:20px 0;
+    border-radius:10px;
 }
 
-#result {
-    margin-top: 20px;
-    font-size: 20px;
-    font-weight: bold;
+input, select{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    box-sizing:border-box;
+}
+
+button{
+    padding:10px 15px;
+    cursor:pointer;
+}
+
+#result{
+    font-size:18px;
+    line-height:1.8;
 }
 </style>
 </head>
 
 <body>
 
-<h1>집갈까?</h1>
+<h1>시간 활용 도우미</h1>
 
-<p>다음 일정까지 남은 시간(분)</p>
-<input type="number" id="totalTime">
+<div class="card">
 
-<p>왕복 이동시간(분)</p>
+<h2>현재 상황 입력</h2>
+
+<label>현재 위치</label>
+<select id="location">
+    <option>집</option>
+    <option>학교</option>
+    <option>알바</option>
+</select>
+
+<label>다음 일정까지 남은 시간(분)</label>
+<input type="number" id="freeTime">
+
+<label>편도 이동시간(분)</label>
 <input type="number" id="travelTime">
 
-<br>
+<label>편도 교통비(원)</label>
+<input type="number" id="cost">
 
-<button onclick="calculate()">계산하기</button>
+<label>배고픔 정도</label>
+<select id="hungry">
+    <option>안 배고픔</option>
+    <option>보통</option>
+    <option>배고픔</option>
+</select>
 
-<div id="result"></div>
+<button onclick="analyze()">분석하기</button>
+
+</div>
+
+<div class="card">
+
+<h2>할 일 추가</h2>
+
+<input type="text" id="taskName" placeholder="예: 과제">
+<input type="number" id="taskTime" placeholder="예: 90">
+
+<button onclick="addTask()">추가</button>
+
+<ul id="taskList"></ul>
+
+</div>
+
+<div class="card">
+
+<h2>결과</h2>
+
+<div id="result">
+분석 결과가 여기에 표시됩니다.
+</div>
+
+</div>
 
 <script>
-function calculate() {
-    let total = Number(document.getElementById("totalTime").value);
-    let travel = Number(document.getElementById("travelTime").value);
 
-    let remain = total - travel;
+let tasks = [];
 
-    let message = "";
+function addTask(){
 
-    if (remain >= 120) {
-        message = "집에 다녀오기 좋습니다.";
+    let name =
+    document.getElementById("taskName").value;
+
+    let time =
+    Number(document.getElementById("taskTime").value);
+
+    if(name === "" || time <= 0){
+        return;
     }
-    else if (remain >= 60) {
-        message = "애매하지만 집에 갈 수 있습니다.";
+
+    tasks.push({
+        name:name,
+        time:time
+    });
+
+    renderTasks();
+
+    document.getElementById("taskName").value="";
+    document.getElementById("taskTime").value="";
+}
+
+function renderTasks(){
+
+    let list =
+    document.getElementById("taskList");
+
+    list.innerHTML="";
+
+    for(let task of tasks){
+
+        list.innerHTML +=
+        `<li>${task.name} (${task.time}분)</li>`;
     }
-    else {
-        message = "집에 가지 않는 것을 추천합니다.";
+}
+
+function analyze(){
+
+    let free =
+    Number(document.getElementById("freeTime").value);
+
+    let travel =
+    Number(document.getElementById("travelTime").value);
+
+    let cost =
+    Number(document.getElementById("cost").value);
+
+    let hungry =
+    document.getElementById("hungry").value;
+
+    let realTime =
+    free - (travel * 2);
+
+    let meal = "불필요";
+
+    if(hungry === "배고픔"){
+        realTime -= 30;
+        meal = "권장";
+    }
+
+    let possible = [];
+
+    for(let task of tasks){
+
+        if(task.time <= realTime){
+            possible.push(task.name);
+        }
     }
 
     document.getElementById("result").innerHTML =
-        "실제 여유시간: " + remain + "분<br>" + message;
+
+    `
+    실제 활용 가능 시간 : <b>${realTime}</b>분<br><br>
+
+    예상 왕복 교통비 : <b>${cost*2}</b>원<br><br>
+
+    식사 여부 : <b>${meal}</b><br><br>
+
+    가능한 활동 :<br>
+    ${possible.length ? possible.join("<br>") : "추천 활동 없음"}
+    `;
 }
+
+</script>
+
+</body>
+</html>
