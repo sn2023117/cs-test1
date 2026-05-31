@@ -1,5 +1,153 @@
-<link rel="stylesheet"
-href="style.css">
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Route & Rest</title>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="hero">
+
+<h1>Route & Rest</h1>
+
+<p>
+남은 시간을 가장 가치 있게
+</p>
+
+</div>
+
+<div id="inputPage">
+
+<div class="panel">
+
+<h2>현재 상황</h2>
+
+<select id="location">
+<option>집</option>
+<option>학교</option>
+<option>알바</option>
+</select>
+
+<input
+type="number"
+id="freeTime"
+placeholder="남은 시간 (분)"
+>
+
+<input
+type="number"
+id="travelTime"
+placeholder="편도 이동시간 (분)"
+>
+
+<input
+type="number"
+id="cost"
+placeholder="편도 교통비 (원)"
+>
+
+<input
+type="number"
+id="mealHour"
+placeholder="마지막 식사 후 경과시간"
+>
+
+<button onclick="analyze()">
+분석 시작
+</button>
+
+</div>
+
+<div class="panel">
+
+<h2>할 일 추가</h2>
+
+<select id="taskPlace">
+<option>집</option>
+<option>학교</option>
+<option>알바</option>
+</select>
+
+<input
+type="text"
+id="taskName"
+placeholder="할 일"
+>
+
+<input
+type="number"
+id="taskTime"
+placeholder="소요시간"
+>
+
+<button onclick="addTask()">
+추가
+</button>
+
+<div id="taskList"></div>
+
+</div>
+
+</div>
+
+<div id="resultPage" class="hidden">
+
+<div class="stats">
+
+<div class="stat-card">
+<div id="timeResult" class="value">0</div>
+<div class="label">활용시간</div>
+</div>
+
+<div class="stat-card">
+<div id="costResult" class="value">0</div>
+<div class="label">교통비</div>
+</div>
+
+<div class="stat-card">
+<div id="mealResult" class="value">0</div>
+<div class="label">식사 필요도</div>
+</div>
+
+<div class="stat-card">
+<div id="scoreResult" class="value">0%</div>
+<div class="label">추천도</div>
+</div>
+
+</div>
+
+<div class="panel">
+
+<h2>추천 행동</h2>
+
+<div id="recommendTasks"></div>
+
+</div>
+
+<div class="panel">
+
+<h2>추천 시설</h2>
+
+<div id="facilityResult"></div>
+
+</div>
+
+<button onclick="goBack()">
+다시 입력하기
+</button>
+
+</div>
+
+</div>
 
 <script src="script.js"></script>
 
+</body>
+</html>
