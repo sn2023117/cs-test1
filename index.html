@@ -29,14 +29,34 @@
     <header class="top-bar">
       <div class="top-bar-inner">
         <span class="app-logo">🌤️ 공강 네비</span>
-        <div class="meal-badge" id="meal-status" onclick="toggleMeal()">
-          <span id="meal-icon">🍚</span>
-          <span id="meal-label">식사 전</span>
+        <div class="top-bar-right">
+          <!-- 실시간 타이머 -->
+          <div class="live-timer" id="live-timer">
+            <span class="timer-icon">⏱️</span>
+            <span id="timer-display">--:--:--</span>
+            <div class="timer-controls">
+              <button class="timer-btn" id="timer-toggle-btn" onclick="toggleTimer()">▶</button>
+              <button class="timer-btn" onclick="resetTimer()">↺</button>
+            </div>
+          </div>
+          <div class="meal-badge" id="meal-status" onclick="toggleMeal()">
+            <span id="meal-icon">🍚</span>
+            <span id="meal-label">식사 전</span>
+          </div>
         </div>
+      </div>
+      <!-- 공강 남은 시간 프로그레스 -->
+      <div class="free-time-progress-bar" id="progress-bar-wrap">
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <span class="progress-label" id="progress-label">공강 시간을 입력하세요</span>
       </div>
     </header>
 
     <main class="page-container">
+
+      <!-- ── HOME ── -->
       <div id="page-home" class="page active">
         <div class="greeting-card">
           <p class="greeting-time" id="greeting-time"></p>
@@ -61,6 +81,13 @@
           </div>
         </div>
 
+        <!-- 최적 스케줄 추천 (홈 요약) -->
+        <div id="home-schedule-banner" class="schedule-banner hidden">
+          <div class="schedule-banner-title">✨ 지금 공강 추천 스케줄</div>
+          <div id="home-schedule-list" class="schedule-banner-list"></div>
+          <button class="schedule-more-btn" onclick="goTo('tasks')">자세히 보기 →</button>
+        </div>
+
         <div class="section-title">오늘의 긴급 할 일</div>
         <div id="home-task-preview" class="task-preview-list"></div>
 
@@ -70,6 +97,7 @@
         </div>
       </div>
 
+      <!-- ── TRAVEL & COST ── -->
       <div id="page-travel" class="page">
         <div class="page-header">
           <h2>🚌 이동 시간 & 교통비</h2>
@@ -104,7 +132,7 @@
           </div>
 
           <label class="input-label">⏱️ 공강 시간 (분)</label>
-          <input type="number" id="free-minutes" class="input-field" placeholder="예: 90" min="10" max="300" />
+          <input type="number" id="free-minutes" class="input-field" placeholder="예: 90" min="10" max="300" oninput="syncFreeMinutes('travel')" />
 
           <label class="input-label">🏠 집에서 머무르는 시간 (분)</label>
           <input type="number" id="home-stay" class="input-field" placeholder="예: 30" min="0" max="120" value="30" />
@@ -171,6 +199,7 @@
         </div>
       </div>
 
+      <!-- ── NEARBY ── -->
       <div id="page-nearby" class="page">
         <div class="page-header">
           <h2>📍 주변 편의시설</h2>
@@ -194,10 +223,35 @@
         <div id="nearby-list" class="nearby-grid"></div>
       </div>
 
+      <!-- ── TASKS ── -->
       <div id="page-tasks" class="page">
         <div class="page-header">
           <h2>📋 위치별 할 일</h2>
-          <p class="page-desc">장소에 따라 할 일을 관리하고 우선순위를 확인해요</p>
+          <p class="page-desc">장소에 따라 할 일을 관리하고 최적 스케줄을 확인해요</p>
+        </div>
+
+        <!-- 최적 스케줄 추천 섹션 -->
+        <div class="schedule-section" id="schedule-section">
+          <div class="schedule-header">
+            <span class="schedule-header-title">✨ 공강 최적 스케줄</span>
+            <div class="schedule-free-input">
+              <span>남은 공강</span>
+              <input type="number" id="schedule-free-min" class="inline-input" value="90" min="10" max="300" oninput="renderSchedule()" />
+              <span>분</span>
+            </div>
+          </div>
+          <div id="schedule-tabs" class="schedule-tabs">
+            <button class="stab active" data-mode="priority" onclick="switchScheduleTab(this,'priority')">🔥 우선순위</button>
+            <button class="stab" data-mode="fit" onclick="switchScheduleTab(this,'fit')">⚡ 시간 최적</button>
+            <button class="stab" data-mode="balance" onclick="switchScheduleTab(this,'balance')">⚖️ 균형</button>
+          </div>
+          <div id="schedule-result" class="schedule-result"></div>
+        </div>
+
+        <!-- 실시간 타이머 연동 현황 -->
+        <div class="timer-status-bar" id="timer-status-bar">
+          <span id="timer-status-text">⏱️ 타이머를 시작하면 남은 공강이 실시간으로 줄어들어요</span>
+          <button class="timer-status-btn" onclick="toggleTimer()">▶ 시작</button>
         </div>
 
         <div class="card add-task-card">
@@ -218,6 +272,9 @@
             <button class="priority-pill mid" data-pri="mid" onclick="selectPri(this)">보통</button>
             <button class="priority-pill low" data-pri="low" onclick="selectPri(this)">낮음</button>
           </div>
+
+          <label class="input-label">⏳ 소요 시간 (분)</label>
+          <input type="number" id="task-duration" class="input-field" placeholder="예: 30" min="5" max="300" value="30" />
 
           <label class="input-label">📅 마감일 (선택)</label>
           <input type="date" id="task-due" class="input-field" />
@@ -242,6 +299,7 @@
 
         <div id="task-list" class="task-list"></div>
       </div>
+
     </main>
 
     <nav class="bottom-nav">
