@@ -1,63 +1,256 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Route & Rest: 여가 시간 활용 도우미</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>공강 네비 🌤️</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>Route & Rest</h1>
-        <p>당신의 자투리 시간을 가치 있게</p>
+  <!-- ══════════════ ONBOARDING SCREEN ══════════════ -->
+  <div id="screen-onboarding" class="screen active">
+    <div class="onboarding-bg">
+      <div class="cloud cloud-1">☁️</div>
+      <div class="cloud cloud-2">☁️</div>
+      <div class="cloud cloud-3">⛅</div>
     </div>
-
-    <div class="card">
-        <h2>📍 현재 상황</h2>
-        <label>출발지 -> 목적지</label>
-        <select id="route">
-            <option value="집-학교">🏠 집 ➔ 🏫 학교</option>
-            <option value="학교-알바">🏫 학교 ➔ ☕ 알바</option>
-            <option value="알바-집">☕ 알바 ➔ 🏠 집</option>
-        </select>
-
-        <label>여유 시간 (분)</label>
-        <input type="number" id="freeTime" placeholder="예: 120">
-
-        <label>편도 이동 시간 (분)</label>
-        <input type="number" id="travelTime" placeholder="예: 30">
-
-        <label>편도 교통비 (원)</label>
-        <input type="number" id="cost" placeholder="예: 1500">
-
-        <button onclick="analyze()" class="btn-main">⚡ 분석 및 결과 보기</button>
+    <div class="onboarding-content">
+      <div class="logo-badge">공강 네비</div>
+      <h1 class="hero-title">지금 집에<br/>다녀올 수 있을까?</h1>
+      <p class="hero-sub">공강 시간, 현명하게 쓰는 법<br/>이동 시간 · 교통비 · 할 일까지 한 번에</p>
+      <button class="btn-start" onclick="goTo('home')">시작하기 →</button>
     </div>
+    <div class="wave-bottom"></div>
+  </div>
 
-    <div class="card">
-        <h2>📝 장소별 할 일 추가</h2>
-        <input type="text" id="taskName" placeholder="할 일 입력 (예: 과제하기)">
-        <input type="number" id="taskTime" placeholder="소요 시간(분)">
-        <button onclick="addTask()" class="btn-sub">리스트에 추가</button>
-        <div id="taskList"></div>
-    </div>
+  <!-- ══════════════ MAIN APP SHELL ══════════════ -->
+  <div id="screen-app" class="screen">
 
-    <div class="card" id="result-card">
-        <h2>📊 분석 결과</h2>
-        <div id="initial-msg">상황을 입력하고 분석 버튼을 눌러주세요.</div>
-        <div id="result-area">
-            <div class="result-item">실제 활용 가능 시간: <span id="res-time" class="highlight">0</span>분</div>
-            <div class="result-item">왕복 교통비: <span id="res-cost" class="highlight">0</span>원</div>
-            <div class="recommendation">
-                <strong>💡 추천 활동:</strong>
-                <div id="res-tasks"></div>
-            </div>
-            <div id="res-place" class="place-tip"></div>
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="top-bar-inner">
+        <span class="app-logo">🌤️ 공강 네비</span>
+        <div class="meal-badge" id="meal-status" onclick="toggleMeal()">
+          <span id="meal-icon">🍚</span>
+          <span id="meal-label">식사 전</span>
         </div>
-    </div>
-</div>
+      </div>
+    </header>
 
-<script src="script.js"></script>
+    <!-- Page Slots -->
+    <main class="page-container">
+
+      <!-- ── HOME ── -->
+      <div id="page-home" class="page active">
+        <div class="greeting-card">
+          <p class="greeting-time" id="greeting-time"></p>
+          <p class="greeting-msg" id="greeting-msg"></p>
+        </div>
+
+        <div class="summary-row">
+          <div class="summary-card" onclick="goTo('travel')">
+            <div class="summary-icon">🚌</div>
+            <div class="summary-label">이동 계산</div>
+            <div class="summary-sub">왕복 시간·요금</div>
+          </div>
+          <div class="summary-card" onclick="goTo('nearby')">
+            <div class="summary-icon">📍</div>
+            <div class="summary-label">주변 장소</div>
+            <div class="summary-sub">카페·편의점·스터디</div>
+          </div>
+          <div class="summary-card" onclick="goTo('tasks')">
+            <div class="summary-icon">📋</div>
+            <div class="summary-label">할 일</div>
+            <div class="summary-sub">위치별 우선순위</div>
+          </div>
+        </div>
+
+        <div class="section-title">오늘의 긴급 할 일</div>
+        <div id="home-task-preview" class="task-preview-list"></div>
+
+        <div id="home-result-banner" class="result-banner hidden">
+          <div class="result-verdict" id="result-verdict-text"></div>
+          <div class="result-detail" id="result-detail-text"></div>
+        </div>
+      </div>
+
+      <!-- ── TRAVEL & COST ── -->
+      <div id="page-travel" class="page">
+        <div class="page-header">
+          <h2>🚌 이동 시간 & 교통비</h2>
+          <p class="page-desc">공강 시간에 집에 다녀올 수 있는지 계산해요</p>
+        </div>
+
+        <div class="card">
+          <label class="input-label">📍 출발지 (현재 위치)</label>
+          <input type="text" id="from-place" class="input-field" placeholder="예: 인하대학교" value="인하대학교" />
+
+          <label class="input-label">🏠 도착지</label>
+          <input type="text" id="to-place" class="input-field" placeholder="예: 인천 부평구 집" value="인천 부평구" />
+
+          <label class="input-label">🚌 이동 수단</label>
+          <div class="transport-pills">
+            <button class="pill active" data-transport="bus" onclick="selectTransport(this)">🚌 버스</button>
+            <button class="pill" data-transport="subway" onclick="selectTransport(this)">🚇 지하철</button>
+            <button class="pill" data-transport="walk" onclick="selectTransport(this)">🚶 도보</button>
+            <button class="pill" data-transport="taxi" onclick="selectTransport(this)">🚕 택시</button>
+          </div>
+
+          <label class="input-label">⏱️ 공강 시간 (분)</label>
+          <input type="number" id="free-minutes" class="input-field" placeholder="예: 90" min="10" max="300" />
+
+          <label class="input-label">🏠 집에서 머무르는 시간 (분)</label>
+          <input type="number" id="home-stay" class="input-field" placeholder="예: 30" min="0" max="120" value="30" />
+
+          <button class="btn-calc" onclick="calcTravel()">계산하기 ✨</button>
+        </div>
+
+        <div id="travel-result" class="result-card hidden">
+          <div class="result-header" id="travel-verdict"></div>
+          <div class="result-grid">
+            <div class="result-item">
+              <div class="result-item-icon">🕐</div>
+              <div class="result-item-label">편도 시간</div>
+              <div class="result-item-val" id="r-one-way"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-item-icon">🔄</div>
+              <div class="result-item-label">왕복 시간</div>
+              <div class="result-item-val" id="r-round-trip"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-item-icon">💰</div>
+              <div class="result-item-label">왕복 요금</div>
+              <div class="result-item-val" id="r-cost"></div>
+            </div>
+            <div class="result-item">
+              <div class="result-item-icon">🏠</div>
+              <div class="result-item-label">여유 시간</div>
+              <div class="result-item-val" id="r-margin"></div>
+            </div>
+          </div>
+          <div class="suggestion-box" id="travel-suggestion"></div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="section-title" style="margin:0 0 12px">💳 교통비 상세</div>
+          <div class="cost-row">
+            <span>버스 기본요금</span><span class="cost-val">1,500원</span>
+          </div>
+          <div class="cost-row">
+            <span>지하철 기본요금</span><span class="cost-val">1,400원</span>
+          </div>
+          <div class="cost-row">
+            <span>환승 할인</span><span class="cost-val">-300원</span>
+          </div>
+          <div class="cost-row total">
+            <span>예상 왕복 합계</span><span class="cost-val" id="cost-total-display">—</span>
+          </div>
+          <p class="cost-note">* 실제 요금은 거리·환승에 따라 달라질 수 있어요</p>
+        </div>
+      </div>
+
+      <!-- ── NEARBY ── -->
+      <div id="page-nearby" class="page">
+        <div class="page-header">
+          <h2>📍 주변 편의시설</h2>
+          <p class="page-desc">공강 시간을 알차게 보낼 장소를 찾아요</p>
+        </div>
+
+        <div class="filter-row">
+          <button class="filter-btn active" data-cat="all" onclick="filterNearby(this, 'all')">전체</button>
+          <button class="filter-btn" data-cat="cafe" onclick="filterNearby(this, 'cafe')">☕ 카페</button>
+          <button class="filter-btn" data-cat="study" onclick="filterNearby(this, 'study')">📚 스터디</button>
+          <button class="filter-btn" data-cat="convenience" onclick="filterNearby(this, 'convenience')">🏪 편의점</button>
+          <button class="filter-btn" data-cat="food" onclick="filterNearby(this, 'food')">🍜 식당</button>
+        </div>
+
+        <div class="free-time-bar">
+          <span>⏱️ 남은 공강</span>
+          <input type="number" id="nearby-free-min" class="inline-input" value="60" min="10" max="300" onchange="renderNearby()" />
+          <span>분</span>
+        </div>
+
+        <div id="nearby-list" class="nearby-grid"></div>
+      </div>
+
+      <!-- ── TASKS ── -->
+      <div id="page-tasks" class="page">
+        <div class="page-header">
+          <h2>📋 위치별 할 일</h2>
+          <p class="page-desc">장소에 따라 할 일을 관리하고 우선순위를 확인해요</p>
+        </div>
+
+        <div class="card add-task-card">
+          <div class="section-title" style="margin:0 0 12px">➕ 할 일 추가</div>
+          <input type="text" id="task-title" class="input-field" placeholder="할 일을 입력하세요" />
+
+          <label class="input-label">📍 장소</label>
+          <div class="transport-pills">
+            <button class="pill active" data-loc="home" onclick="selectLoc(this)">🏠 집</button>
+            <button class="pill" data-loc="school" onclick="selectLoc(this)">🏫 학교</button>
+            <button class="pill" data-loc="anywhere" onclick="selectLoc(this)">🌍 어디서나</button>
+          </div>
+
+          <label class="input-label">🔥 우선순위</label>
+          <div class="priority-pills">
+            <button class="priority-pill urgent active" data-pri="urgent" onclick="selectPri(this)">긴급</button>
+            <button class="priority-pill high" data-pri="high" onclick="selectPri(this)">높음</button>
+            <button class="priority-pill mid" data-pri="mid" onclick="selectPri(this)">보통</button>
+            <button class="priority-pill low" data-pri="low" onclick="selectPri(this)">낮음</button>
+          </div>
+
+          <label class="input-label">📅 마감일 (선택)</label>
+          <input type="date" id="task-due" class="input-field" />
+
+          <label class="input-label">🍽️ 식사 후 해야 하나요?</label>
+          <div class="transport-pills">
+            <button class="pill active" data-meal="any" onclick="selectMealReq(this)">상관없음</button>
+            <button class="pill" data-meal="after" onclick="selectMealReq(this)">식사 후</button>
+            <button class="pill" data-meal="before" onclick="selectMealReq(this)">식사 전</button>
+          </div>
+
+          <button class="btn-calc" onclick="addTask()">추가하기 ✅</button>
+        </div>
+
+        <div class="section-title">📍 현재 위치별 할 일</div>
+        <div class="location-tabs">
+          <button class="loc-tab active" data-loc="all" onclick="switchLocTab(this, 'all')">전체</button>
+          <button class="loc-tab" data-loc="home" onclick="switchLocTab(this, 'home')">🏠 집</button>
+          <button class="loc-tab" data-loc="school" onclick="switchLocTab(this, 'school')">🏫 학교</button>
+          <button class="loc-tab" data-loc="anywhere" onclick="switchLocTab(this, 'anywhere')">🌍 어디서나</button>
+        </div>
+
+        <div id="task-list" class="task-list"></div>
+      </div>
+
+    </main>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-page="home" onclick="goTo('home')">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">홈</span>
+      </button>
+      <button class="nav-btn" data-page="travel" onclick="goTo('travel')">
+        <span class="nav-icon">🚌</span>
+        <span class="nav-label">이동</span>
+      </button>
+      <button class="nav-btn" data-page="nearby" onclick="goTo('nearby')">
+        <span class="nav-icon">📍</span>
+        <span class="nav-label">주변</span>
+      </button>
+      <button class="nav-btn" data-page="tasks" onclick="goTo('tasks')">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">할 일</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
