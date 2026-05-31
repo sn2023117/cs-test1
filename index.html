@@ -1,3 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>공강 네비 🌤️</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ══════════════ ONBOARDING SCREEN ══════════════ -->
+  <div id="screen-onboarding" class="screen active">
+    <div class="onboarding-bg">
+      <div class="cloud cloud-1">☁️</div>
+      <div class="cloud cloud-2">☁️</div>
+      <div class="cloud cloud-3">⛅</div>
+    </div>
+    <div class="onboarding-content">
+      <div class="logo-badge">공강 네비</div>
+      <h1 class="hero-title">지금 집에<br/>다녀올 수 있을까?</h1>
+      <p class="hero-sub">공강 시간, 현명하게 쓰는 법<br/>이동 시간 · 교통비 · 할 일까지 한 번에</p>
+      <button class="btn-start" onclick="goTo('home')">시작하기 →</button>
+    </div>
+    <div class="wave-bottom"></div>
+  </div>
+
+  <!-- ══════════════ MAIN APP SHELL ══════════════ -->
+  <div id="screen-app" class="screen">
+
+    <header class="top-bar">
+      <div class="top-bar-inner">
+        <span class="app-logo">🌤️ 공강 네비</span>
+        <div class="meal-badge" id="meal-status" onclick="toggleMeal()">
+          <span id="meal-icon">🍚</span>
+          <span id="meal-label">식사 전</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-container">
+
+      <div id="page-home" class="page active">
+        <div class="greeting-card">
+          <p class="greeting-time" id="greeting-time"></p>
+          <p class="greeting-msg" id="greeting-msg"></p>
+        </div>
+
+        <div class="summary-row">
+          <div class="summary-card" onclick="goTo('travel')">
+            <div class="summary-icon">🚌</div>
+            <div class="summary-label">이동 계산</div>
+            <div class="summary-sub">왕복 시간·요금</div>
+          </div>
+          <div class="summary-card" onclick="goTo('nearby')">
+            <div class="summary-icon">📍</div>
+            <div class="summary-label">주변 장소</div>
+            <div class="summary-sub">카페·편의점·스터디</div>
+          </div>
+          <div class="summary-card" onclick="goTo('tasks')">
+            <div class="summary-icon">📋</div>
+            <div class="summary-label">할 일</div>
+            <div class="summary-sub">위치별 우선순위</div>
+          </div>
+        </div>
+
+        <div class="section-title">오늘의 긴급 할 일</div>
+        <div id="home-task-preview" class="task-preview-list"></div>
+
+        <div id="home-result-banner" class="result-banner hidden">
+          <div class="result-verdict" id="result-verdict-text"></div>
+          <div class="result-detail" id="result-detail-text"></div>
+        </div>
+      </div>
+
+      <div id="page-travel" class="page">
+        <div class="page-header">
+          <h2>🚌 이동 시간 & 교통비</h2>
+          <p class="page-desc">공강 시간에 집에 다녀올 수 있는지 계산해요</p>
+        </div>
+
+        <div class="card">
+          <label class="input-label">📍 출발지 (현재 위치)</label>
+          <input type="text" id="from-place" class="input-field" list="place-options" placeholder="예: 숭실대입구역" value="숭실대입구역" />
+
+          <label class="input-label">🏠 도착지</label>
+          <input type="text" id="to-place" class="input-field" list="place-options" placeholder="예: 부개역" value="부개역" />
+
+          <datalist id="place-options"></datalist>
+
+          <div class="route-actions">
+            <button class="mini-btn" type="button" onclick="saveCurrentRoute()">출발지/도착지 저장</button>
+            <button class="mini-btn secondary" type="button" onclick="swapPlaces()">출발·도착 바꾸기</button>
+          </div>
+
           <label class="input-label">🔎 저장/더미 경로 검색</label>
           <input type="search" id="route-search" class="input-field" placeholder="예: 숭실대입구역, 부개역, 학교" oninput="renderRouteLibrary()" />
           <div id="saved-route-list" class="route-list"></div>
@@ -22,7 +118,7 @@
 
         <div id="travel-result" class="result-card hidden">
           <div class="result-header" id="travel-verdict"></div>
-                    <div class="route-summary" id="route-summary"></div>
+          <div class="route-summary" id="route-summary"></div>
           <div class="result-grid">
             <div class="result-item">
               <div class="result-item-icon">🕐</div>
@@ -66,7 +162,6 @@
         </div>
       </div>
 
-      <!-- ── NEARBY ── -->
       <div id="page-nearby" class="page">
         <div class="page-header">
           <h2>📍 주변 편의시설</h2>
@@ -90,7 +185,6 @@
         <div id="nearby-list" class="nearby-grid"></div>
       </div>
 
-      <!-- ── TASKS ── -->
       <div id="page-tasks" class="page">
         <div class="page-header">
           <h2>📋 위치별 할 일</h2>
@@ -142,7 +236,6 @@
 
     </main>
 
-    <!-- Bottom Nav -->
     <nav class="bottom-nav">
       <button class="nav-btn active" data-page="home" onclick="goTo('home')">
         <span class="nav-icon">🏠</span>
