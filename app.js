@@ -2,6 +2,7 @@ const STORAGE_KEYS = {
   tasks: 'gn_tasks',
   customRoutes: 'gn_custom_routes',
   lastRoute: 'gn_last_route',
+  freeMinutes: 'gn_free_minutes',
 };
 
 const transportLabels = {
@@ -23,6 +24,7 @@ const state = {
   activeLocTab: 'all',
   nearbyFilter: 'all',
   lastTravel: readStorage(STORAGE_KEYS.lastRoute, null),
+  freeMinutes: readStorage(STORAGE_KEYS.freeMinutes, ''),
 };
 
 if (state.tasks.length === 0) {
@@ -77,16 +79,40 @@ const dummyRoutes = [
   },
 ];
 
-const nearbyPlaces = [
-  { id: 1, name: '숭실 스터디 카페', cat: 'study', emoji: '📚', dist: '도보 3분', minNeeded: 30, desc: '조용한 개인석, 콘센트 많음', rating: '4.8' },
-  { id: 2, name: '이디야 숭실대점', cat: 'cafe', emoji: '☕', dist: '도보 2분', minNeeded: 15, desc: '아메리카노 2,500원', rating: '4.2' },
-  { id: 3, name: 'GS25 숭실대입구역점', cat: 'convenience', emoji: '🏪', dist: '도보 1분', minNeeded: 5, desc: '24시간', rating: '4.0' },
-  { id: 4, name: '김밥천국', cat: 'food', emoji: '🍱', dist: '도보 5분', minNeeded: 20, desc: '빠른 식사 가능', rating: '4.1' },
-  { id: 5, name: '카페 블루밍', cat: 'cafe', emoji: '🌸', dist: '도보 7분', minNeeded: 20, desc: '공부하기 좋은 카페', rating: '4.6' },
-  { id: 6, name: '메가스터디카페', cat: 'study', emoji: '🏢', dist: '도보 10분', minNeeded: 60, desc: '인쇄 가능, 편의시설 완비', rating: '4.5' },
-  { id: 7, name: 'CU 숭실대점', cat: 'convenience', emoji: '🏪', dist: '도보 2분', minNeeded: 5, desc: '택배, ATM 가능', rating: '3.9' },
-  { id: 8, name: '학생회관 식당', cat: 'food', emoji: '🍚', dist: '도보 4분', minNeeded: 25, desc: '학생 가격 식사', rating: '4.3' },
-];
+const nearbyCatalog = {
+  soongsil: [
+    { id: 1, name: '숭실 스터디 카페', cat: 'study', emoji: '📚', dist: '도보 3분', minNeeded: 30, desc: '조용한 개인석, 콘센트 많음', rating: '4.8' },
+    { id: 2, name: '이디야 숭실대점', cat: 'cafe', emoji: '☕', dist: '도보 2분', minNeeded: 15, desc: '아메리카노 2,500원', rating: '4.2' },
+    { id: 3, name: 'GS25 숭실대입구역점', cat: 'convenience', emoji: '🏪', dist: '도보 1분', minNeeded: 5, desc: '24시간', rating: '4.0' },
+    { id: 4, name: '김밥천국 숭실대점', cat: 'food', emoji: '🍱', dist: '도보 5분', minNeeded: 20, desc: '빠른 식사 가능', rating: '4.1' },
+    { id: 5, name: '카페 블루밍', cat: 'cafe', emoji: '🌸', dist: '도보 7분', minNeeded: 20, desc: '공부하기 좋은 카페', rating: '4.6' },
+    { id: 6, name: '메가스터디카페', cat: 'study', emoji: '🏢', dist: '도보 10분', minNeeded: 60, desc: '인쇄 가능, 편의시설 완비', rating: '4.5' },
+  ],
+  bugae: [
+    { id: 11, name: '부개역 투썸플레이스', cat: 'cafe', emoji: '☕', dist: '도보 4분', minNeeded: 20, desc: '좌석 넓음, 콘센트 있음', rating: '4.5' },
+    { id: 12, name: '부개역 스터디라운지', cat: 'study', emoji: '📚', dist: '도보 6분', minNeeded: 40, desc: '1시간권 이용 가능', rating: '4.6' },
+    { id: 13, name: 'CU 부개역점', cat: 'convenience', emoji: '🏪', dist: '도보 1분', minNeeded: 5, desc: '간식, 택배 가능', rating: '4.0' },
+    { id: 14, name: '부개역 김밥', cat: 'food', emoji: '🍱', dist: '도보 3분', minNeeded: 18, desc: '빠르게 먹기 좋음', rating: '4.2' },
+  ],
+  inha: [
+    { id: 21, name: '인하 스터디 카페', cat: 'study', emoji: '📚', dist: '도보 3분', minNeeded: 30, desc: '조용한 개인실, WiFi', rating: '4.8' },
+    { id: 22, name: '이디야 인하대점', cat: 'cafe', emoji: '☕', dist: '도보 2분', minNeeded: 15, desc: '아메리카노 2,500원', rating: '4.2' },
+    { id: 23, name: 'GS25 인하대역점', cat: 'convenience', emoji: '🏪', dist: '도보 1분', minNeeded: 5, desc: '24시간', rating: '4.0' },
+    { id: 24, name: '학생회관 식당', cat: 'food', emoji: '🍚', dist: '도보 4분', minNeeded: 25, desc: '학생 가격 식사', rating: '4.3' },
+  ],
+  gangnam: [
+    { id: 31, name: '강남역 블루보틀 근처 카페', cat: 'cafe', emoji: '☕', dist: '도보 5분', minNeeded: 25, desc: '짧은 대기, 커피 휴식', rating: '4.4' },
+    { id: 32, name: '강남역 공유 스터디룸', cat: 'study', emoji: '📚', dist: '도보 8분', minNeeded: 60, desc: '예약형 스터디룸', rating: '4.5' },
+    { id: 33, name: '세븐일레븐 강남역점', cat: 'convenience', emoji: '🏪', dist: '도보 1분', minNeeded: 5, desc: '간단 구매 가능', rating: '3.9' },
+    { id: 34, name: '강남역 분식집', cat: 'food', emoji: '🍜', dist: '도보 4분', minNeeded: 20, desc: '빠른 한 끼', rating: '4.1' },
+  ],
+  default: [
+    { id: 91, name: '출발지 근처 카페', cat: 'cafe', emoji: '☕', dist: '도보 5분', minNeeded: 20, desc: '더미 추천 카페', rating: '4.2' },
+    { id: 92, name: '출발지 근처 스터디존', cat: 'study', emoji: '📚', dist: '도보 8분', minNeeded: 40, desc: '공부하기 좋은 장소', rating: '4.4' },
+    { id: 93, name: '출발지 근처 편의점', cat: 'convenience', emoji: '🏪', dist: '도보 2분', minNeeded: 5, desc: '간단 구매 가능', rating: '4.0' },
+    { id: 94, name: '출발지 근처 식당', cat: 'food', emoji: '🍱', dist: '도보 6분', minNeeded: 25, desc: '빠른 식사 가능', rating: '4.1' },
+  ],
+};
 
 function readStorage(key, fallback) {
   try {
@@ -120,7 +146,6 @@ function makeFallbackRoute(from, to) {
   const seedText = `${from}-${to}`;
   const seed = [...seedText].reduce((sum, char) => sum + char.charCodeAt(0), 0);
   const distanceKm = Math.max(3, Math.min(35, Math.round((6 + (seed % 25) + seedText.length * 0.25) * 10) / 10));
-
   return {
     id: `fallback-${Date.now()}`,
     from,
@@ -141,6 +166,68 @@ function getSelectedRoute() {
   const to = document.getElementById('to-place').value.trim();
   if (!from || !to) return null;
   return findRoute(from, to) || makeFallbackRoute(from, to);
+}
+
+function getOriginName() {
+  return document.getElementById('from-place')?.value.trim() || '출발지';
+}
+
+function getOriginKey(place = getOriginName()) {
+  const key = normalizePlace(place);
+  if (key.includes('숭실')) return 'soongsil';
+  if (key.includes('부개')) return 'bugae';
+  if (key.includes('인하')) return 'inha';
+  if (key.includes('강남')) return 'gangnam';
+  return 'default';
+}
+
+function getNearbyPlacesForOrigin(place = getOriginName()) {
+  return nearbyCatalog[getOriginKey(place)] || nearbyCatalog.default;
+}
+
+function getSharedFreeMinutes(fallback = '') {
+  const travelValue = document.getElementById('free-minutes')?.value;
+  const nearbyValue = document.getElementById('nearby-free-min')?.value;
+  return parseInt(travelValue || nearbyValue || state.freeMinutes || fallback, 10);
+}
+
+function saveFreeMinutes(value) {
+  if (!value) return;
+  state.freeMinutes = String(value);
+  writeStorage(STORAGE_KEYS.freeMinutes, state.freeMinutes);
+}
+
+function syncFreeMinutes(source) {
+  const sourceId = source === 'nearby' ? 'nearby-free-min' : 'free-minutes';
+  const value = document.getElementById(sourceId)?.value;
+  if (!value) return;
+
+  saveFreeMinutes(value);
+
+  if (source !== 'nearby') {
+    const nearbyInput = document.getElementById('nearby-free-min');
+    if (nearbyInput) nearbyInput.value = value;
+  }
+
+  if (source !== 'travel') {
+    const travelInput = document.getElementById('free-minutes');
+    if (travelInput) travelInput.value = value;
+  }
+
+  renderNearby();
+  renderResultPreviews();
+  calcTravel({ silent: true });
+}
+
+function hydrateFreeMinuteInputs() {
+  const saved = state.freeMinutes;
+  const travelInput = document.getElementById('free-minutes');
+  const nearbyInput = document.getElementById('nearby-free-min');
+
+  if (saved) {
+    if (travelInput && !travelInput.value) travelInput.value = saved;
+    if (nearbyInput) nearbyInput.value = saved;
+  }
 }
 
 function goTo(page) {
@@ -202,9 +289,11 @@ function locLabel(loc) {
 
 function toggleMeal() {
   state.mealEaten = !state.mealEaten;
+
   const badge = document.getElementById('meal-status');
   document.getElementById('meal-icon').textContent = state.mealEaten ? '✅' : '🍚';
   document.getElementById('meal-label').textContent = state.mealEaten ? '식사 완료' : '식사 전';
+
   badge.classList.toggle('ate', state.mealEaten);
   renderTasks();
 }
@@ -217,16 +306,21 @@ function selectTransport(btn) {
 }
 
 function renderTravelPage() {
+  hydrateFreeMinuteInputs();
   renderPlaceOptions();
   renderRouteLibrary();
   updateRouteNote();
+  renderResultPreviews();
+
   if (document.getElementById('free-minutes').value) calcTravel({ silent: true });
 }
 
 function renderPlaceOptions() {
   const places = [...new Set(allRoutes().flatMap(route => [route.from, route.to]))].sort((a, b) => a.localeCompare(b, 'ko'));
   const el = document.getElementById('place-options');
+
   if (!el) return;
+
   el.innerHTML = places.map(place => `<option value="${escapeHtml(place)}"></option>`).join('');
 }
 
@@ -292,6 +386,7 @@ function saveCurrentRoute() {
 
   state.customRoutes.unshift(route);
   writeStorage(STORAGE_KEYS.customRoutes, state.customRoutes);
+
   renderPlaceOptions();
   renderRouteLibrary();
   updateRouteNote(route);
@@ -319,7 +414,7 @@ function updateRouteNote(route = getSelectedRoute()) {
 }
 
 function calcTravel(options = {}) {
-  const freeMin = parseInt(document.getElementById('free-minutes').value, 10);
+  const freeMin = getSharedFreeMinutes();
   const stayMin = parseInt(document.getElementById('home-stay').value, 10) || 30;
   const route = getSelectedRoute();
 
@@ -333,6 +428,9 @@ function calcTravel(options = {}) {
     if (!options.silent) alert('공강 시간을 입력해주세요 (최소 10분)');
     return;
   }
+
+  saveFreeMinutes(freeMin);
+  hydrateFreeMinuteInputs();
 
   const transportData = route.transports[state.transport] || route.transports.subway || Object.values(route.transports)[0];
   const oneWayMin = transportData.oneWayMin;
@@ -380,9 +478,11 @@ function calcTravel(options = {}) {
 
   const result = { canGo, route, roundMin, roundCost, marginMin };
   state.lastTravel = result;
+
   writeStorage(STORAGE_KEYS.lastRoute, result);
   updateHomeTravelBanner(result);
   updateRouteNote(route);
+  renderResultPreviews();
 
   if (!options.silent) resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -396,6 +496,44 @@ function updateHomeTravelBanner(result) {
   document.getElementById('result-detail-text').textContent = `${result.route.from} → ${result.route.to} · 왕복 ${result.roundMin}분 · 교통비 ${formatWon(result.roundCost)}`;
 }
 
+function renderResultPreviews() {
+  const taskEl = document.getElementById('result-task-preview');
+  const nearbyEl = document.getElementById('result-nearby-preview');
+
+  if (!taskEl || !nearbyEl) return;
+
+  const taskPreview = [...state.tasks]
+    .filter(t => !t.done)
+    .sort((a, b) => (priOrder[a.pri] ?? 9) - (priOrder[b.pri] ?? 9))
+    .slice(0, 3);
+
+  taskEl.innerHTML = taskPreview.length
+    ? taskPreview.map(t => `
+      <div class="preview-item">
+        <span class="preview-dot pri-${t.pri}"></span>
+        <span>${escapeHtml(t.title)}</span>
+      </div>
+    `).join('')
+    : '<div class="preview-empty">할 일이 없어요</div>';
+
+  const freeMin = getSharedFreeMinutes(60);
+  const places = getNearbyPlacesForOrigin(getOriginName())
+    .filter(p => p.cat === 'cafe')
+    .sort((a, b) => {
+      const aOk = freeMin >= a.minNeeded ? 1 : 0;
+      const bOk = freeMin >= b.minNeeded ? 1 : 0;
+      return bOk - aOk || parseFloat(b.rating) - parseFloat(a.rating);
+    })
+    .slice(0, 2);
+
+  nearbyEl.innerHTML = places.map(p => `
+    <div class="preview-place">
+      <strong>${p.emoji} ${escapeHtml(p.name)}</strong>
+      <span>${p.dist} · ${p.minNeeded}분 필요 · ⭐ ${p.rating}</span>
+    </div>
+  `).join('');
+}
+
 function filterNearby(btn, cat) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -404,10 +542,16 @@ function filterNearby(btn, cat) {
 }
 
 function renderNearby() {
-  const freeMin = parseInt(document.getElementById('nearby-free-min')?.value || '60', 10);
-  const cat = state.nearbyFilter;
+  hydrateFreeMinuteInputs();
 
-  let places = [...nearbyPlaces];
+  const freeMin = getSharedFreeMinutes(60);
+  const cat = state.nearbyFilter;
+  const originName = getOriginName();
+
+  const originLabel = document.getElementById('nearby-origin-label');
+  if (originLabel) originLabel.textContent = `⏱️ ${originName} 주변 · 남은 공강`;
+
+  let places = [...getNearbyPlacesForOrigin(originName)];
   if (cat !== 'all') places = places.filter(p => p.cat === cat);
 
   places.sort((a, b) => {
@@ -484,9 +628,11 @@ function addTask() {
   };
 
   state.tasks.unshift(task);
+
   saveTasks();
   renderTasks();
   renderHome();
+  renderResultPreviews();
 
   document.getElementById('task-title').value = '';
   document.getElementById('task-due').value = '';
@@ -494,19 +640,23 @@ function addTask() {
 
 function toggleTask(id) {
   const task = state.tasks.find(t => t.id === id);
+
   if (task) {
     task.done = !task.done;
     saveTasks();
     renderTasks();
     renderHome();
+    renderResultPreviews();
   }
 }
 
 function deleteTask(id) {
   state.tasks = state.tasks.filter(t => t.id !== id);
+
   saveTasks();
   renderTasks();
   renderHome();
+  renderResultPreviews();
 }
 
 function switchLocTab(btn, loc) {
@@ -516,7 +666,12 @@ function switchLocTab(btn, loc) {
   renderTasks();
 }
 
-const priOrder = { urgent: 0, high: 1, mid: 2, low: 3 };
+const priOrder = {
+  urgent: 0,
+  high: 1,
+  mid: 2,
+  low: 3,
+};
 
 function renderTasks() {
   const filter = state.activeLocTab;
@@ -598,6 +753,7 @@ function escapeHtml(value) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  hydrateFreeMinuteInputs();
   renderHome();
   renderNearby();
   renderTasks();
@@ -605,7 +761,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   ['from-place', 'to-place', 'free-minutes', 'home-stay'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', () => {
+      if (id === 'free-minutes') {
+        syncFreeMinutes('travel');
+        return;
+      }
+
       updateRouteNote();
+      renderNearby();
+      renderResultPreviews();
       calcTravel({ silent: true });
     });
   });
